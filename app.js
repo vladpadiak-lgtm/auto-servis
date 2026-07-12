@@ -24,6 +24,43 @@ const serviceLabels = {
   uk:{diagnostics:'Комп’ютерна діагностика',maintenance:'Планове ТО',brakes:'Гальмівна система',suspension:'Ходова частина',tires:'Шиномонтаж',other:'Інше / консультація'},
   sk:{diagnostics:'Počítačová diagnostika',maintenance:'Pravidelný servis',brakes:'Brzdový systém',suspension:'Podvozok',tires:'Pneuservis',other:'Iné / konzultácia'}
 };
+Object.assign(translations.uk,{make_ph:'Почніть вводити марку…',model_ph:'Спочатку оберіть марку',year_ph:'Оберіть рік'});
+Object.assign(translations.sk,{make_ph:'Začnite písať značku…',model_ph:'Najprv vyberte značku',year_ph:'Vyberte rok'});
+
+const carCatalog = {
+  'Audi':['A3','A4','A5','A6','A7','A8','Q3','Q5','Q7','Q8','S3','S4','S6','RS3','RS4','RS6','e-tron'],
+  'BMW':['1 Series','2 Series','3 Series','4 Series','5 Series','7 Series','X1','X3','X5','X6','X7','M2','M3','M4','M5'],
+  'Mercedes-Benz':['A-Class','B-Class','C-Class','E-Class','S-Class','CLA','CLS','GLA','GLC','GLE','GLS','E220','E300','E53 AMG','E63 AMG','E63 S AMG'],
+  'Volkswagen':['Polo','Golf','Passat','Arteon','T-Cross','T-Roc','Tiguan','Touareg','Touran','Caddy','ID.3','ID.4'],
+  'Škoda':['Fabia','Scala','Octavia','Superb','Kamiq','Karoq','Kodiaq','Enyaq'],
+  'Toyota':['Yaris','Corolla','Camry','C-HR','RAV4','Highlander','Land Cruiser','Prius','Proace'],
+  'Kia':['Picanto','Rio','Ceed','ProCeed','Stonic','Sportage','Sorento','Niro','EV6'],
+  'Hyundai':['i10','i20','i30','Elantra','Kona','Tucson','Santa Fe','Ioniq 5','Ioniq 6'],
+  'Ford':['Fiesta','Focus','Mondeo','Puma','Kuga','Mustang','Ranger','Transit'],
+  'Opel':['Corsa','Astra','Insignia','Mokka','Crossland','Grandland','Zafira','Vivaro'],
+  'Peugeot':['208','308','408','508','2008','3008','5008','Rifter','Traveller'],
+  'Renault':['Clio','Megane','Talisman','Captur','Arkana','Kadjar','Austral','Espace','Trafic'],
+  'Volvo':['S60','S90','V60','V90','XC40','XC60','XC90','EX30'],
+  'Porsche':['718','911','Taycan','Panamera','Macan','Cayenne'],
+  'Tesla':['Model 3','Model S','Model X','Model Y'],
+  'Maserati':['Ghibli','Quattroporte','GranTurismo','Grecale','Levante','MC20'],
+  'McLaren':['Artura','GT','570S','600LT','720S','750S','Senna'],
+  'Mazda':['Mazda2','Mazda3','Mazda6','CX-3','CX-30','CX-5','CX-60','MX-5'],
+  'Honda':['Jazz','Civic','Accord','HR-V','CR-V'],
+  'Nissan':['Micra','Juke','Qashqai','X-Trail','Leaf','Navara','GT-R'],
+  'Lexus':['CT','IS','ES','LS','UX','NX','RX','RZ'],
+  'Land Rover':['Defender','Discovery','Discovery Sport','Range Rover','Range Rover Sport','Range Rover Velar','Range Rover Evoque']
+};
+
+function fillOptions(id, values){$(id).innerHTML=values.map(value=>`<option value="${value}"></option>`).join('')}
+fillOptions('#car-makes',Object.keys(carCatalog));
+fillOptions('#car-years',Array.from({length:new Date().getFullYear()-1958},(_,i)=>String(new Date().getFullYear()+1-i)));
+$('#car-make').addEventListener('input',()=>{
+  const typed=$('#car-make').value.toLowerCase();
+  const exact=Object.keys(carCatalog).find(make=>make.toLowerCase()===typed);
+  const related=exact?carCatalog[exact]:Object.entries(carCatalog).filter(([make])=>make.toLowerCase().includes(typed)).flatMap(([,models])=>models).slice(0,25);
+  fillOptions('#car-models',related);
+});
 
 function durationText(minutes) {
   if (minutes < 60) return `${minutes} ${t('minutes')}`;
