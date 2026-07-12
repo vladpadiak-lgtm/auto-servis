@@ -3,6 +3,8 @@ import json
 import os
 import smtplib
 import sqlite3
+import urllib.parse
+import urllib.request
 from datetime import date, datetime, timedelta
 from email.message import EmailMessage
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -93,6 +95,32 @@ def send_confirmation(booking):
     return True
 
 
+def send_telegram(booking):
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_ADMIN_CHAT_ID")
+    if not token or not chat_id:
+        return False
+    when = datetime.fromisoformat(booking["appointment_at"]).strftime("%d.%m.%Y о %H:%M")
+    text = (
+        "🚗 НОВИЙ ЗАПИС НА СЕРВІС\n\n"
+        f"👤 {booking['first_name']} {booking['last_name']}\n"
+        f"📞 {booking['phone']}\n✉️ {booking['email']}\n\n"
+        f"🚘 {booking['car_make']} {booking['car_model']} ({booking['car_year']})\n"
+        f"🔢 Номер: {booking.get('plate') or 'не вказано'}\n\n"
+        f"🔧 Роботи: {booking['service']}\n"
+        f"📅 Термін: {when}\n⏱ Тривалість: {booking['duration']} хв\n"
+        f"📝 Коментар: {booking.get('note') or 'немає'}\n\n"
+        f"Код: {booking['booking_code']}"
+    )
+    keyboard = {"inline_keyboard": [[
+        {"text": "✅ Підтвердити", "callback_data": f"confirm:{booking['booking_code']}"},
+        {"text": "❌ Скасувати", "callback_data": f"cancel:{booking['booking_code']}"}
+    ]]}
+    payload = urllib.parse.urlencode({"chat_id": chat_id, "text": text, "reply_markup": json.dumps(keyboard, ensure_ascii=False)}).encode()
+    with urllib.request.urlopen(urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=payload), timeout=15) as response:
+        return json.load(response).get("ok", False)
+
+
 class Handler(SimpleHTTPRequestHandler):
     def translate_path(self, path):
         clean = urlparse(path).path.lstrip("/") or "index.html"
@@ -174,11 +202,16 @@ class Handler(SimpleHTTPRequestHandler):
             self.json_response(409, {"error": "Цей час щойно зайняли. Оберіть інший."})
             return
         emailed = False
+        telegram_sent = False
         try:
             emailed = send_confirmation(booking)
         except Exception as exc:
             print(f"Email error: {exc}")
-        self.json_response(201, {"ok": True, "booking_code": code, "email_sent": emailed})
+        try:
+            telegram_sent = send_telegram(booking)
+        except Exception as exc:
+            print(f"Telegram error: {exc}")
+        self.json_response(201, {"ok": True, "booking_code": code, "email_sent": emailed, "telegram_sent": telegram_sent})
 
     def log_message(self, format, *args):
         print(f"[{self.log_date_time_string()}] {format % args}")
