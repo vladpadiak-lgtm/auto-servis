@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from email.message import EmailMessage
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "bookings.db"
@@ -15,7 +15,7 @@ HOST = os.getenv("HOST", "127.0.0.1")
 PORT = int(os.getenv("PORT", "8080"))
 OPEN_HOUR = 8
 CLOSE_HOUR = 18
-SLOT_MINUTES = 60
+SLOT_MINUTES = 30
 
 
 def db():
@@ -38,14 +38,18 @@ def db():
           plate TEXT,
           service TEXT NOT NULL,
           note TEXT,
+          duration INTEGER NOT NULL DEFAULT 60,
           created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(bookings)")}
+    if "duration" not in columns:
+        connection.execute("ALTER TABLE bookings ADD COLUMN duration INTEGER NOT NULL DEFAULT 60")
     return connection
 
 
-def valid_slots(day):
+def valid_slots(day, duration=60):
     try:
         selected = date.fromisoformat(day)
     except ValueError:
@@ -53,9 +57,16 @@ def valid_slots(day):
     today = date.today()
     if selected < today or selected > today + timedelta(days=60) or selected.weekday() == 6:
         return []
+    duration = max(30, min(240, int(duration)))
+    close_hour = 16 if selected.weekday() == 5 else CLOSE_HOUR
     start = datetime.combine(selected, datetime.min.time()).replace(hour=OPEN_HOUR)
-    return [(start + timedelta(minutes=SLOT_MINUTES * i)).isoformat(timespec="minutes")
-            for i in range((CLOSE_HOUR - OPEN_HOUR) * 60 // SLOT_MINUTES)]
+    now_limit = datetime.now() + timedelta(hours=2)
+    slots = []
+    for i in range((close_hour - OPEN_HOUR) * 60 // SLOT_MINUTES):
+        slot = start + timedelta(minutes=SLOT_MINUTES * i)
+        if slot > now_limit and slot + timedelta(minutes=duration) <= start.replace(hour=close_hour):
+            slots.append(slot.isoformat(timespec="minutes"))
+    return slots
 
 
 def send_confirmation(booking):
@@ -100,13 +111,19 @@ class Handler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path.startswith("/api/slots/"):
             day = parsed.path.rsplit("/", 1)[-1]
-            slots = valid_slots(day)
+            try:
+                duration = int(parse_qs(parsed.query).get("duration", ["60"])[0])
+            except ValueError:
+                duration = 60
+            slots = valid_slots(day, duration)
             with db() as conn:
-                taken = {row["appointment_at"] for row in conn.execute(
-                    "SELECT appointment_at FROM bookings WHERE appointment_at LIKE ?", (f"{day}%",)
-                )}
+                bookings = list(conn.execute("SELECT appointment_at, duration FROM bookings WHERE appointment_at LIKE ?", (f"{day}%",)))
+            def available(slot):
+                start = datetime.fromisoformat(slot)
+                end = start + timedelta(minutes=duration)
+                return not any(start < datetime.fromisoformat(row["appointment_at"]) + timedelta(minutes=row["duration"]) and end > datetime.fromisoformat(row["appointment_at"]) for row in bookings)
             self.json_response(200, {"date": day, "slots": [
-                {"value": slot, "time": slot[-5:], "available": slot not in taken} for slot in slots
+                {"value": slot, "time": slot[-5:], "available": available(slot)} for slot in slots
             ]})
             return
         super().do_GET()
@@ -127,20 +144,31 @@ class Handler(SimpleHTTPRequestHandler):
             self.json_response(400, {"error": "Заповніть усі обов’язкові поля"})
             return
         appointment = str(data["appointment_at"])
-        if appointment not in valid_slots(appointment[:10]):
+        try:
+            duration = max(30, min(240, int(data.get("duration", 60))))
+        except ValueError:
+            duration = 60
+        if appointment not in valid_slots(appointment[:10], duration):
             self.json_response(400, {"error": "Оберіть доступний час"})
             return
         code = "TS-" + datetime.now().strftime("%y%m%d%H%M%S%f")[-12:].upper()
         booking = {key: str(data.get(key, "")).strip() for key in required + ["plate", "note"]}
         booking["booking_code"] = code
+        booking["duration"] = duration
         try:
             with db() as conn:
+                start = datetime.fromisoformat(appointment)
+                end = start + timedelta(minutes=duration)
+                overlap = conn.execute("SELECT 1 FROM bookings WHERE datetime(appointment_at) < datetime(?) AND datetime(appointment_at, '+' || duration || ' minutes') > datetime(?) LIMIT 1", (end.isoformat(timespec="minutes"), appointment)).fetchone()
+                if overlap:
+                    self.json_response(409, {"error": "Цей час щойно зайняли. Оберіть інший."})
+                    return
                 conn.execute(
                     """INSERT INTO bookings
                     (booking_code, appointment_at, first_name, last_name, email, phone, car_make,
-                     car_model, car_year, plate, service, note)
+                     car_model, car_year, plate, service, note, duration)
                     VALUES (:booking_code, :appointment_at, :first_name, :last_name, :email, :phone,
-                            :car_make, :car_model, :car_year, :plate, :service, :note)""", booking
+                            :car_make, :car_model, :car_year, :plate, :service, :note, :duration)""", booking
                 )
         except sqlite3.IntegrityError:
             self.json_response(409, {"error": "Цей час щойно зайняли. Оберіть інший."})
