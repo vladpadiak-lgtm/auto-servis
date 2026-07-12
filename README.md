@@ -15,3 +15,7 @@ python3 server.py
 Для реальної відправки задайте змінні середовища: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `FROM_EMAIL`.
 
 Без них бронювання працює й зберігається, але лист не відправляється. Дані записів зберігаються локально у `bookings.db`.
+
+## Telegram
+
+Для повідомлень адміністратору задайте секретні змінні `TELEGRAM_BOT_TOKEN` і `TELEGRAM_ADMIN_CHAT_ID`. Токен заборонено додавати у відкритий код або JavaScript.
