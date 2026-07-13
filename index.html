@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="TorqueLab Service — сучасний автосервіс та онлайн-запис без дзвінків." />
-  <meta name="theme-color" content="#090b0d" />
+  <meta name="theme-color" content="#121619" />
   <title>TorqueLab Service — автосервіс нового покоління</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4" />
-  <link rel="stylesheet" href="enhancements.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="enhancements.css?v=5" />
 </head>
 <body>
   <header class="nav wrap">
@@ -69,7 +69,7 @@
         <div><div class="label-text" data-i18n="free_time">Вільний час</div><div id="slots" class="slots"><p data-i18n="select_service_date">Спочатку оберіть послугу та дату</p></div><input type="hidden" name="appointment_at" required><div class="slot-legend"><span><i class="free"></i> <b data-i18n="available">Доступно</b></span><span><i class="busy"></i> <b data-i18n="busy">Зайнято</b></span></div></div>
         <label><span data-i18n="comment">Коментар</span> <span data-i18n="optional">(необов’язково)</span><textarea name="note" rows="4" placeholder="Опишіть проблему або побажання…" data-placeholder="comment_ph"></textarea></label>
         <div id="booking-summary" class="booking-summary"><small data-i18n="your_booking">ВАШ ЗАПИС</small><div><span data-i18n="summary_service">Послуга</span><strong id="summary-service">—</strong></div><div><span data-i18n="summary_time">Дата і час</span><strong id="summary-time">—</strong></div><div><span data-i18n="summary_duration">Тривалість</span><strong id="summary-duration">—</strong></div></div>
-        <label class="consent"><input type="checkbox" required><span data-i18n="consent">Погоджуюся на обробку персональних даних для організації запису.</span></label>
+        <label class="consent"><input type="checkbox" name="consent" value="accepted" required><span data-i18n="consent">Погоджуюся на обробку персональних даних для організації запису.</span></label>
         <button class="button submit" type="submit" data-i18n="confirm_booking">Підтвердити запис →</button>
         <p id="form-message" role="alert"></p>
       </form>
@@ -79,6 +79,6 @@
   <footer id="contacts"><div class="wrap footer-grid"><div><a class="logo light" href="#top"><span>TL</span> TORQUELAB</a><p data-i18n="footer_text">Сучасний автосервіс, якому довіряють.</p></div><div><strong data-i18n="nav_contacts">Контакти</strong><a href="tel:+421900000000">+421 900 000 000</a><a href="mailto:service@example.com">service@example.com</a></div><div><strong data-i18n="schedule">Графік</strong><p data-i18n-html="schedule_text">Пн–Пт: 08:00–18:00<br>Субота: 08:00–16:00<br>Неділя: зачинено</p></div><div><strong data-i18n="address">Адреса</strong><p data-i18n-html="address_text">Братислава, Словаччина<br>Точну адресу додамо пізніше</p></div></div><div class="wrap legal" data-i18n="copyright">© 2026 TorqueLab Service · Демонстраційний сайт</div></footer>
 
   <div id="success" class="modal" aria-hidden="true"><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="success-title" tabindex="-1"><div class="success-icon">✓</div><h2 id="success-title" data-i18n="success_title">Запис підтверджено!</h2><p data-i18n="success_text">Ваш час заброньовано. Збережіть код запису:</p><strong id="booking-code"></strong><small id="email-status"></small><button class="button" id="close-modal" data-i18n="done">Готово</button></div></div>
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
