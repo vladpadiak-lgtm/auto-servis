@@ -2,7 +2,7 @@
 .language{display:flex;border:1px solid var(--line);background:var(--white);padding:3px}
 .language button{border:0;background:transparent;color:var(--muted);font:800 10px Manrope;padding:7px 9px;cursor:pointer}
 .language button.active{background:var(--orange);color:#fff}
-.booking-benefits{display:grid;gap:13px;margin-top:28px;padding:24px;background:#15191c;color:#fff}
+.booking-benefits{display:grid;gap:13px;margin-top:28px;padding:24px;background:#1a2024;color:#fff}
 .booking-benefits span{font-size:12px;color:var(--orange)}
 .booking-benefits b{color:#fff;margin-left:7px}
 .slot-group{grid-column:1/-1;margin:10px 0 0;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.12em}
@@ -11,7 +11,7 @@
 .slot-legend i{width:8px;height:8px;border-radius:50%}
 .slot-legend .free{background:var(--green)}
 .slot-legend .busy{background:#c7c9c7}
-.booking-summary{margin-top:26px;padding:22px;background:#101416;border-left:3px solid var(--orange)}
+.booking-summary{margin-top:26px;padding:22px;background:#171d21;border-left:3px solid var(--orange)}
 .booking-summary>small{font-weight:800;color:var(--orange);letter-spacing:.13em}
 .booking-summary>div{display:flex;justify-content:space-between;gap:25px;border-bottom:1px solid var(--line);padding:11px 0;font-size:11px}
 .booking-summary>div:last-child{border:0}
