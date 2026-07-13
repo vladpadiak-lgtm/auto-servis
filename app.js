@@ -182,7 +182,7 @@ form.addEventListener('submit', async event => {
   const payload=Object.fromEntries(new FormData(form).entries());
   const duration=+serviceInput.selectedOptions[0].dataset.duration;
   try {
-    const emailPayload={_subject:`Новий запис на автосервіс — ${payload.appointment_at}`,_template:'table',_url:location.href,'Ім’я':payload.first_name,'Прізвище':payload.last_name,'Email клієнта':payload.email,'Телефон':payload.phone,'Марка авто':payload.car_make,'Модель авто':payload.car_model,'Рік випуску':payload.car_year,'Номерний знак':payload.plate||'Не вказано','Потрібні роботи':serviceLabels[lang][payload.service],'Тривалість':durationText(duration),'Дата і час':payload.appointment_at.replace('T',' '),'Коментар клієнта':payload.note||'Немає'};
+    const emailPayload={_subject:`Новий запис на автосервіс — ${payload.appointment_at}`,_template:'table',_url:location.href,'Ім’я':payload.first_name,'Прізвище':payload.last_name,'Email клієнта':payload.email,'Телефон':payload.phone,'Марка авто':payload.car_make,'Модель авто':payload.car_model,'Рік випуску':payload.car_year,'Номерний знак':payload.plate||'Не вказано','Потрібні роботи':serviceLabels[lang][payload.service],'Тривалість':durationText(duration),'Дата і час':payload.appointment_at.replace('T',' '),'Коментар клієнта':payload.note||'Немає','Згода на обробку даних':'Так'};
     const endpoint=isStaticDemo?EMAIL_ENDPOINT:'/api/bookings';
     const body=isStaticDemo?emailPayload:{...payload,service:payload.service};
     const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});
