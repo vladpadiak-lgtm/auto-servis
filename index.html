@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="TorqueLab Service — сучасний автосервіс та онлайн-запис без дзвінків." />
+  <meta name="theme-color" content="#090b0d" />
   <title>TorqueLab Service — автосервіс нового покоління</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,9 +47,9 @@
 
     <section id="process" class="process">
       <div class="wrap"><span class="kicker" data-i18n="simple">ПРОСТО Й ЗРОЗУМІЛО</span><h2 data-i18n="process_title">Від запису до готового авто</h2><div class="steps">
-        <div><span>1</span><h3 data-i18n="step1_title">Оберіть час</h3><p data-i18n="step1_text">Вкажіть послугу, авто та зручний вільний термін.</p></div>
-        <div><span>2</span><h3 data-i18n="step2_title">Отримайте підтвердження</h3><p data-i18n="step2_text">Система забронює час і надішле всі деталі на email.</p></div>
-        <div><span>3</span><h3 data-i18n="step3_title">Приїжджайте до нас</h3><p data-i18n="step3_text">Майстер уже знатиме про ваше авто та запит.</p></div>
+        <div><span><b>1</b></span><h3 data-i18n="step1_title">Оберіть час</h3><p data-i18n="step1_text">Вкажіть послугу, авто та зручний вільний термін.</p></div>
+        <div><span><b>2</b></span><h3 data-i18n="step2_title">Отримайте підтвердження</h3><p data-i18n="step2_text">Система забронює час і надішле всі деталі на email.</p></div>
+        <div><span><b>3</b></span><h3 data-i18n="step3_title">Приїжджайте до нас</h3><p data-i18n="step3_text">Майстер уже знатиме про ваше авто та запит.</p></div>
       </div></div>
     </section>
 
@@ -77,7 +78,7 @@
 
   <footer id="contacts"><div class="wrap footer-grid"><div><a class="logo light" href="#top"><span>TL</span> TORQUELAB</a><p data-i18n="footer_text">Сучасний автосервіс, якому довіряють.</p></div><div><strong data-i18n="nav_contacts">Контакти</strong><a href="tel:+421900000000">+421 900 000 000</a><a href="mailto:service@example.com">service@example.com</a></div><div><strong data-i18n="schedule">Графік</strong><p data-i18n-html="schedule_text">Пн–Пт: 08:00–18:00<br>Субота: 08:00–16:00<br>Неділя: зачинено</p></div><div><strong data-i18n="address">Адреса</strong><p data-i18n-html="address_text">Братислава, Словаччина<br>Точну адресу додамо пізніше</p></div></div><div class="wrap legal" data-i18n="copyright">© 2026 TorqueLab Service · Демонстраційний сайт</div></footer>
 
-  <div id="success" class="modal" aria-hidden="true"><div class="modal-card"><div class="success-icon">✓</div><h2 data-i18n="success_title">Запис підтверджено!</h2><p data-i18n="success_text">Ваш час заброньовано. Збережіть код запису:</p><strong id="booking-code"></strong><small id="email-status"></small><button class="button" id="close-modal" data-i18n="done">Готово</button></div></div>
+  <div id="success" class="modal" aria-hidden="true"><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="success-title" tabindex="-1"><div class="success-icon">✓</div><h2 id="success-title" data-i18n="success_title">Запис підтверджено!</h2><p data-i18n="success_text">Ваш час заброньовано. Збережіть код запису:</p><strong id="booking-code"></strong><small id="email-status"></small><button class="button" id="close-modal" data-i18n="done">Готово</button></div></div>
   <script src="app.js?v=5"></script>
 </body>
 </html>
