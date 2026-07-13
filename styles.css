@@ -1,4 +1,4 @@
-:root{color-scheme:dark;--ink:#f4f6f7;--muted:#a8b0b5;--paper:#090b0d;--white:#15191c;--orange:#ff632b;--line:#30363a;--green:#4bd09a}
+:root{color-scheme:dark;--ink:#f5f7f8;--muted:#b1b8bd;--paper:#121619;--white:#1b2125;--orange:#ff6b35;--line:#3b4349;--green:#55d7a3}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;font-family:Manrope,system-ui,sans-serif;color:var(--ink);background:var(--paper)}
@@ -28,7 +28,7 @@ nav a:hover{color:var(--orange)}
 .trust span{font-size:11px;color:var(--muted);margin-top:5px}
 .hero-visual{height:500px;position:relative;display:grid;place-items:center}
 .orange-disc{position:absolute;width:390px;height:390px;border-radius:50%;background:linear-gradient(135deg,#ff7b3d,var(--orange));box-shadow:0 40px 100px #ff5c2240}
-.car-card{z-index:1;background:#15191c;color:#fff;width:360px;height:270px;padding:40px;display:flex;flex-direction:column;justify-content:flex-end;transform:rotate(-3deg);box-shadow:0 40px 65px #15191c44}
+.car-card{z-index:1;background:#171c20;color:#fff;width:360px;height:270px;padding:40px;display:flex;flex-direction:column;justify-content:flex-end;transform:rotate(-3deg);box-shadow:0 40px 65px #0005}
 .car-icon{font-size:78px;color:var(--orange);margin:auto}
 .car-card small{font-size:9px;letter-spacing:.16em;color:#aaa}
 .car-card strong{font-size:23px;margin-top:8px}
@@ -49,7 +49,7 @@ nav a:hover{color:var(--orange)}
 .services h3{margin:0 0 12px;font-size:19px}
 .services p{color:var(--muted);font-size:13px;line-height:1.7}
 .services article>span{font-weight:800;font-size:13px;margin-top:auto}
-.process{background:#15191c;color:#fff;padding:100px 0}
+.process{background:#181e22;color:#fff;padding:100px 0}
 .process h2{text-align:center}
 .process>.wrap>.kicker{display:block;text-align:center}
 .steps{display:grid;grid-template-columns:repeat(3,1fr);margin-top:60px}
@@ -76,22 +76,22 @@ form{background:var(--white);padding:44px;box-shadow:0 25px 70px #0006}
 .grid.three{grid-template-columns:1fr 1fr 1fr}
 label,.label-text{display:block;font-size:11px;font-weight:800;margin:15px 0 7px}
 label span{font-weight:500;color:var(--muted)}
-input,select,textarea{width:100%;border:1px solid var(--line);background:#0e1113;color:var(--ink);padding:14px;font:500 13px Manrope;outline:none;border-radius:0}
+input,select,textarea{width:100%;border:1px solid var(--line);background:#151a1e;color:var(--ink);padding:14px;font:500 13px Manrope;outline:none;border-radius:0}
 input::placeholder,textarea::placeholder{color:#737b80;opacity:1}
-select option{background:#0e1113;color:var(--ink)}
+select option{background:#151a1e;color:var(--ink)}
 input:focus,select:focus,textarea:focus{border-color:var(--orange);box-shadow:0 0 0 3px #ff5c2212}
 .divider{height:1px;background:var(--line);margin:38px 0}
 .slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
-.slots button{padding:12px 4px;border:1px solid var(--line);background:#101416;color:var(--ink);font:700 12px Manrope;cursor:pointer}
+.slots button{padding:12px 4px;border:1px solid var(--line);background:#171d21;color:var(--ink);font:700 12px Manrope;cursor:pointer}
 .slots button:hover:not(:disabled),.slots button.selected{border-color:var(--orange);background:var(--orange);color:#fff}
-.slots button:disabled{background:#22272a;color:#777f84;text-decoration:line-through;cursor:not-allowed}
+.slots button:disabled{background:#293035;color:#8a9297;text-decoration:line-through;cursor:not-allowed}
 .slots p{grid-column:1/-1;color:var(--muted);font-size:12px}
 .consent{display:flex;align-items:flex-start;gap:9px;font-weight:500;line-height:1.5;margin:24px 0}
 .consent input{width:auto;margin-top:3px}
 .submit{width:100%}
 #form-message{font-size:12px;text-align:center;color:#c33816;min-height:18px}
 .footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:50px}
-footer{background:#0f1214;color:#fff;padding:70px 0 24px}
+footer{background:#101417;color:#fff;padding:70px 0 24px}
 .logo.light{margin-bottom:20px}
 footer p,footer a{color:#95999d;font-size:12px;line-height:1.9;display:block}
 footer strong{display:block;font-size:12px;margin-bottom:18px}
