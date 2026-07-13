@@ -18,7 +18,8 @@ const translations = {
   }
 };
 
-let lang = localStorage.getItem('torquelab_lang') || 'uk';
+let lang = localStorage.getItem('torquelab_lang');
+if (!translations[lang]) lang = 'uk';
 const t = key => translations[lang][key] || key;
 const serviceLabels = {
   uk:{diagnostics:'Комп’ютерна діагностика',maintenance:'Планове ТО',brakes:'Гальмівна система',suspension:'Ходова частина',tires:'Шиномонтаж',other:'Інше / консультація'},
@@ -26,6 +27,8 @@ const serviceLabels = {
 };
 Object.assign(translations.uk,{make_ph:'Почніть вводити марку…',model_ph:'Спочатку оберіть марку',year_ph:'Оберіть рік'});
 Object.assign(translations.sk,{make_ph:'Začnite písať značku…',model_ph:'Najprv vyberte značku',year_ph:'Vyberte rok'});
+Object.assign(translations.uk,{email_not_sent:'Запис збережено. Email-сповіщення не налаштоване.'});
+Object.assign(translations.sk,{email_not_sent:'Rezervácia bola uložená. Emailové upozornenie nie je nastavené.'});
 
 const carCatalog = {
   'Audi':['A3','A4','A5','A6','A7','A8','Q3','Q5','Q7','Q8','S3','S4','S6','RS3','RS4','RS6','e-tron'],
@@ -87,10 +90,20 @@ function setLanguage(next) {
 document.querySelectorAll('[data-lang]').forEach(button => button.addEventListener('click', () => setLanguage(button.dataset.lang)));
 
 const today = new Date();
-const iso = d => d.toLocaleDateString('en-CA');
+const pad = value => String(value).padStart(2, '0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const localDateTime = d => `${iso(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 dateInput.min = iso(today);
 const maxDate = new Date(today); maxDate.setDate(maxDate.getDate() + 60); dateInput.max = iso(maxDate);
-const savedBookings = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+const savedBookings = () => {
+  try {
+    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(value) ? value : [];
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return [];
+  }
+};
 
 function updateSummary() {
   const option = serviceInput.selectedOptions[0];
@@ -116,7 +129,7 @@ function buildDemoSlots(day, duration) {
       const end = new Date(start.getTime() + duration * 60000);
       const overlap = taken.some(item => start < new Date(item.end) && end > new Date(item.start));
       const available = end.getHours() + end.getMinutes()/60 <= closing && start.getTime() > now.getTime() + 2*3600000 && !overlap;
-      result.push({value:start.toISOString().slice(0,16),time:start.toTimeString().slice(0,5),available});
+      result.push({value:localDateTime(start),time:`${pad(start.getHours())}:${pad(start.getMinutes())}`,available});
     }
   }
   return result;
@@ -171,15 +184,23 @@ form.addEventListener('submit', async event => {
   try {
     const emailPayload={_subject:`Новий запис на автосервіс — ${payload.appointment_at}`,_template:'table',_url:location.href,'Ім’я':payload.first_name,'Прізвище':payload.last_name,'Email клієнта':payload.email,'Телефон':payload.phone,'Марка авто':payload.car_make,'Модель авто':payload.car_model,'Рік випуску':payload.car_year,'Номерний знак':payload.plate||'Не вказано','Потрібні роботи':serviceLabels[lang][payload.service],'Тривалість':durationText(duration),'Дата і час':payload.appointment_at.replace('T',' '),'Коментар клієнта':payload.note||'Немає'};
     const endpoint=isStaticDemo?EMAIL_ENDPOINT:'/api/bookings';
-    const body=isStaticDemo?emailPayload:{...payload,service:serviceLabels[lang][payload.service],duration};
+    const body=isStaticDemo?emailPayload:{...payload,service:payload.service};
     const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});
     const data=await res.json(); if(!res.ok) throw new Error(data.error||t('booking_error'));
-    if(isStaticDemo){const bookings=savedBookings();const start=new Date(payload.appointment_at);bookings.push({start:payload.appointment_at,end:new Date(start.getTime()+duration*60000).toISOString().slice(0,16)});localStorage.setItem(STORAGE_KEY,JSON.stringify(bookings));}
+    if(isStaticDemo){const bookings=savedBookings();const start=new Date(payload.appointment_at);bookings.push({start:payload.appointment_at,end:localDateTime(new Date(start.getTime()+duration*60000))});localStorage.setItem(STORAGE_KEY,JSON.stringify(bookings));}
     $('#booking-code').textContent=data.booking_code||`TS-${Date.now().toString().slice(-8)}`;
-    $('#email-status').textContent=t('email_sent'); $('#success').classList.add('open'); $('#success').setAttribute('aria-hidden','false');
+    $('#email-status').textContent=isStaticDemo||data.email_sent?t('email_sent'):t('email_not_sent');
+    $('#success').classList.add('open'); $('#success').setAttribute('aria-hidden','false'); $('.modal-card').focus();
     form.reset(); appointmentInput.value=''; slotsEl.innerHTML=`<p>${t('select_service_date')}</p>`; updateSummary(); findNextSlot();
   } catch(err){message.textContent=err.message;if(dateInput.value)loadSlots(dateInput.value)} finally{submit.disabled=false;submit.textContent=original;}
 });
 
-$('#close-modal').addEventListener('click',()=>{$('#success').classList.remove('open');$('#success').setAttribute('aria-hidden','true')});
+function closeModal() {
+  $('#success').classList.remove('open');
+  $('#success').setAttribute('aria-hidden','true');
+  form.querySelector('.submit').focus();
+}
+$('#close-modal').addEventListener('click',closeModal);
+$('#success').addEventListener('click',event=>{if(event.target===$('#success'))closeModal()});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('#success').classList.contains('open'))closeModal()});
 setLanguage(lang); findNextSlot();
