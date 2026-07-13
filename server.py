@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import re
 import smtplib
 import sqlite3
 import urllib.parse
@@ -18,6 +19,20 @@ PORT = int(os.getenv("PORT", "8080"))
 OPEN_HOUR = 8
 CLOSE_HOUR = 18
 SLOT_MINUTES = 30
+MAX_BODY_BYTES = 64 * 1024
+PUBLIC_FILES = {"index.html", "styles.css", "enhancements.css", "app.js"}
+SERVICE_DETAILS = {
+    "diagnostics": ("Комп’ютерна діагностика", 60),
+    "maintenance": ("Планове ТО", 90),
+    "brakes": ("Гальмівна система", 120),
+    "suspension": ("Ходова частина", 120),
+    "tires": ("Шиномонтаж", 60),
+    "other": ("Інше / консультація", 60),
+}
+FIELD_LIMITS = {
+    "first_name": 80, "last_name": 80, "email": 254, "phone": 40,
+    "car_make": 80, "car_model": 80, "car_year": 4, "plate": 24, "note": 1000,
+}
 
 
 def db():
@@ -48,6 +63,7 @@ def db():
     columns = {row[1] for row in connection.execute("PRAGMA table_info(bookings)")}
     if "duration" not in columns:
         connection.execute("ALTER TABLE bookings ADD COLUMN duration INTEGER NOT NULL DEFAULT 60")
+    connection.commit()
     return connection
 
 
@@ -112,19 +128,27 @@ def send_telegram(booking):
         f"📝 Коментар: {booking.get('note') or 'немає'}\n\n"
         f"Код: {booking['booking_code']}"
     )
-    keyboard = {"inline_keyboard": [[
-        {"text": "✅ Підтвердити", "callback_data": f"confirm:{booking['booking_code']}"},
-        {"text": "❌ Скасувати", "callback_data": f"cancel:{booking['booking_code']}"}
-    ]]}
-    payload = urllib.parse.urlencode({"chat_id": chat_id, "text": text, "reply_markup": json.dumps(keyboard, ensure_ascii=False)}).encode()
+    payload = urllib.parse.urlencode({"chat_id": chat_id, "text": text}).encode()
     with urllib.request.urlopen(urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=payload), timeout=15) as response:
         return json.load(response).get("ok", False)
 
 
 class Handler(SimpleHTTPRequestHandler):
     def translate_path(self, path):
-        clean = urlparse(path).path.lstrip("/") or "index.html"
-        return str(ROOT / clean)
+        clean = urllib.parse.unquote(urlparse(path).path).lstrip("/") or "index.html"
+        return str(ROOT / clean) if clean in PUBLIC_FILES else str(ROOT / "__not_found__")
+
+    def end_headers(self):
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; style-src 'self' https://fonts.googleapis.com; "
+            "font-src https://fonts.gstatic.com; connect-src 'self' https://formsubmit.co; "
+            "img-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        )
+        super().end_headers()
 
     def json_response(self, status, payload):
         body = json.dumps(payload, ensure_ascii=False).encode()
@@ -162,6 +186,9 @@ class Handler(SimpleHTTPRequestHandler):
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0 or length > MAX_BODY_BYTES:
+                self.json_response(413, {"error": "Запит завеликий або порожній"})
+                return
             data = json.loads(self.rfile.read(length))
         except (ValueError, json.JSONDecodeError):
             self.json_response(400, {"error": "Некоректні дані"})
@@ -171,20 +198,38 @@ class Handler(SimpleHTTPRequestHandler):
         if any(not str(data.get(key, "")).strip() for key in required):
             self.json_response(400, {"error": "Заповніть усі обов’язкові поля"})
             return
-        appointment = str(data["appointment_at"])
+        service_key = str(data["service"]).strip()
+        if service_key not in SERVICE_DETAILS:
+            self.json_response(400, {"error": "Оберіть послугу зі списку"})
+            return
+        for key, limit in FIELD_LIMITS.items():
+            if len(str(data.get(key, "")).strip()) > limit:
+                self.json_response(400, {"error": f"Поле {key} перевищує дозволену довжину"})
+                return
+        email = str(data["email"]).strip()
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+            self.json_response(400, {"error": "Вкажіть коректний email"})
+            return
         try:
-            duration = max(30, min(240, int(data.get("duration", 60))))
+            car_year = int(str(data["car_year"]).strip())
         except ValueError:
-            duration = 60
+            car_year = 0
+        if not 1960 <= car_year <= date.today().year + 1:
+            self.json_response(400, {"error": "Вкажіть коректний рік авто"})
+            return
+        appointment = str(data["appointment_at"])
+        service_label, duration = SERVICE_DETAILS[service_key]
         if appointment not in valid_slots(appointment[:10], duration):
             self.json_response(400, {"error": "Оберіть доступний час"})
             return
         code = "TS-" + datetime.now().strftime("%y%m%d%H%M%S%f")[-12:].upper()
         booking = {key: str(data.get(key, "")).strip() for key in required + ["plate", "note"]}
+        booking["service"] = service_label
         booking["booking_code"] = code
         booking["duration"] = duration
         try:
             with db() as conn:
+                conn.execute("BEGIN IMMEDIATE")
                 start = datetime.fromisoformat(appointment)
                 end = start + timedelta(minutes=duration)
                 overlap = conn.execute("SELECT 1 FROM bookings WHERE datetime(appointment_at) < datetime(?) AND datetime(appointment_at, '+' || duration || ' minutes') > datetime(?) LIMIT 1", (end.isoformat(timespec="minutes"), appointment)).fetchone()
@@ -200,6 +245,9 @@ class Handler(SimpleHTTPRequestHandler):
                 )
         except sqlite3.IntegrityError:
             self.json_response(409, {"error": "Цей час щойно зайняли. Оберіть інший."})
+            return
+        except sqlite3.OperationalError:
+            self.json_response(503, {"error": "Сервіс тимчасово зайнятий. Спробуйте ще раз."})
             return
         emailed = False
         telegram_sent = False
