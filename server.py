@@ -184,6 +184,9 @@ class Handler(SimpleHTTPRequestHandler):
         if urlparse(self.path).path != "/api/bookings":
             self.json_response(404, {"error": "Не знайдено"})
             return
+        if not self.headers.get("Content-Type", "").lower().startswith("application/json"):
+            self.json_response(415, {"error": "Очікується JSON-запит"})
+            return
         try:
             length = int(self.headers.get("Content-Length", "0"))
             if length <= 0 or length > MAX_BODY_BYTES:
@@ -198,6 +201,9 @@ class Handler(SimpleHTTPRequestHandler):
         if any(not str(data.get(key, "")).strip() for key in required):
             self.json_response(400, {"error": "Заповніть усі обов’язкові поля"})
             return
+        if data.get("consent") != "accepted":
+            self.json_response(400, {"error": "Потрібна згода на обробку персональних даних"})
+            return
         service_key = str(data["service"]).strip()
         if service_key not in SERVICE_DETAILS:
             self.json_response(400, {"error": "Оберіть послугу зі списку"})
@@ -209,6 +215,10 @@ class Handler(SimpleHTTPRequestHandler):
         email = str(data["email"]).strip()
         if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
             self.json_response(400, {"error": "Вкажіть коректний email"})
+            return
+        phone = str(data["phone"]).strip()
+        if not re.fullmatch(r"[+()\d\s.-]{7,40}", phone) or len(re.sub(r"\D", "", phone)) < 7:
+            self.json_response(400, {"error": "Вкажіть коректний телефон"})
             return
         try:
             car_year = int(str(data["car_year"]).strip())
